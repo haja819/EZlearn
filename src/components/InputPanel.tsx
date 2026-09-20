@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Camera, Upload, Trash2, ArrowRight, Loader2, Lightbulb, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, Trash2, ArrowRight, Loader2 } from 'lucide-react';
 import { ExplanationLevel } from '../types';
-import { SAMPLE_TOPICS, SampleTopic } from '../data/sampleExplanations';
+import { SAMPLE_TOPICS } from '../data/sampleExplanations';
 
 interface InputPanelProps {
   text: string;
@@ -31,7 +31,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   const handleImageFile = async (file: File) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setOcrError('Please upload an image file (PNG, JPG, WEBP).');
+      setOcrError('Please select an image file (PNG, JPG, or WEBP).');
       return;
     }
 
@@ -61,7 +61,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           if (data.text) {
             onChangeText(data.text);
           } else {
-            setOcrError('No readable study text detected in this image. Try another photo.');
+            setOcrError('No readable text found in this photo. Try another picture.');
           }
         } catch (err: any) {
           setOcrError(err.message || 'Error processing image.');
@@ -70,11 +70,11 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         }
       };
       reader.onerror = () => {
-        setOcrError('Failed to read the image file.');
+        setOcrError('Could not read the selected image file.');
         setOcrLoading(false);
       };
     } catch (err: any) {
-      setOcrError(err.message || 'Failed to upload image.');
+      setOcrError(err.message || 'Failed to upload photo.');
       setOcrLoading(false);
     }
   };
@@ -108,20 +108,23 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   };
 
   return (
-    <section id="input-section" className="bg-white rounded-2xl border border-amber-200/70 p-5 sm:p-6 shadow-sm">
-      {/* Header & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <section
+      id="input-section"
+      className="border border-[var(--color-border)] bg-[var(--bg-paper)] p-5 sm:p-6 rounded-md"
+    >
+      {/* Notebook Section Heading */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-3 text-left">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
-            <span>What are you studying?</span>
+          <h2 className="text-xl font-serif font-bold text-[var(--text-ink)] leading-snug">
+            What are you studying?
           </h2>
-          <p className="text-xs text-slate-500">
-            Paste confusing sentences, textbook paragraphs, research papers, or homework questions.
+          <p className="text-xs text-[var(--text-muted)] font-sans mt-0.5">
+            Paste textbook notes, confusing paragraphs, or homework prompts
           </p>
         </div>
 
         {/* OCR Photo Button */}
-        <div className="flex items-center gap-2">
+        <div>
           <input
             type="file"
             ref={fileInputRef}
@@ -138,18 +141,18 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             type="button"
             disabled={ocrLoading}
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-amber-50/80 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors disabled:opacity-50"
-            title="Upload a photo of your textbook or notes to extract text"
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border border-[var(--color-border)] hover:bg-[var(--pill-bg)] text-[var(--text-ink)] transition-colors disabled:opacity-50 cursor-pointer"
+            title="Upload a photo of your textbook notes to extract text"
           >
             {ocrLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
-                <span>Scanning photo...</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-simple)]" />
+                <span>Reading photo...</span>
               </>
             ) : (
               <>
-                <Camera className="w-3.5 h-3.5 text-amber-700" />
-                <span>Snap or Upload Notes (OCR)</span>
+                <Camera className="w-3.5 h-3.5 text-[var(--accent-example)]" />
+                <span>Upload notes photo</span>
               </>
             )}
           </button>
@@ -157,28 +160,28 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       </div>
 
       {ocrError && (
-        <div className="mb-3 p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center justify-between">
+        <div className="mb-3 p-3 bg-[var(--input-bg)] border-l-3 border-[var(--accent-keypoints)] text-xs text-[var(--text-ink)] flex items-center justify-between">
           <span>{ocrError}</span>
           <button
             type="button"
             onClick={() => setOcrError(null)}
-            className="text-rose-500 hover:text-rose-700 font-bold ml-2"
+            className="text-[var(--text-muted)] hover:text-[var(--text-ink)] ml-2 text-sm"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Main Text Area with Drag & Drop */}
+      {/* Textarea */}
       <div
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`relative rounded-xl border transition-all ${
+        className={`relative border rounded-md transition-colors ${
           dragActive
-            ? 'border-amber-500 ring-4 ring-amber-100 bg-amber-50/40'
-            : 'border-slate-200 focus-within:border-amber-400 focus-within:ring-3 focus-within:ring-amber-100/70 bg-slate-50/50'
+            ? 'border-[var(--accent-simple)] bg-[var(--input-bg)]'
+            : 'border-[var(--color-border)] bg-[var(--input-bg)] focus-within:border-[var(--text-ink)]'
         }`}
       >
         <textarea
@@ -186,26 +189,29 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           value={text}
           onChange={(e) => onChangeText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Paste textbook paragraph or study concept here... (e.g. 'The Keynesian fiscal multiplier reflects the ratio of change in national income...')"
-          rows={6}
-          className="w-full p-4 bg-transparent text-slate-800 placeholder:text-slate-400 focus:outline-hidden text-sm sm:text-base resize-y leading-relaxed font-sans"
+          placeholder="Paste or write textbook text here..."
+          rows={5}
+          className="w-full p-3.5 bg-transparent text-[var(--text-ink)] placeholder:text-[var(--text-muted)] placeholder:opacity-60 focus:outline-none text-sm sm:text-base resize-y leading-relaxed font-sans"
         />
 
         {dragActive && (
-          <div className="absolute inset-0 bg-amber-500/10 backdrop-blur-xs flex flex-col items-center justify-center rounded-xl pointer-events-none text-amber-900 border-2 border-dashed border-amber-500">
-            <Upload className="w-8 h-8 mb-2 animate-bounce text-amber-600" />
-            <p className="text-sm font-semibold">Drop textbook photo or notes here to OCR</p>
+          <div className="absolute inset-0 bg-[var(--input-bg)] flex flex-col items-center justify-center rounded-md pointer-events-none border-2 border-dashed border-[var(--accent-simple)]">
+            <Upload className="w-6 h-6 mb-1 text-[var(--accent-simple)]" />
+            <p className="text-xs font-medium text-[var(--text-ink)]">
+              Drop textbook photo here to extract text
+            </p>
           </div>
         )}
 
-        {/* Textarea Bottom Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200/70 bg-white/70 rounded-b-xl text-xs text-slate-500">
-          <div className="flex items-center gap-3">
+        {/* Textarea Bottom Status Bar */}
+        <div className="flex items-center justify-between px-3.5 py-2 border-t border-[var(--color-border-subtle)] text-xs text-[var(--text-muted)]">
+          <div className="flex items-center gap-2">
             <span>
-              {wordCount} words • {charCount} chars
+              {wordCount} words, {charCount} characters
             </span>
-            <span className="hidden sm:inline text-slate-400">|</span>
-            <span className="hidden sm:inline text-slate-400">Press Cmd+Enter to explain</span>
+            <span className="hidden sm:inline opacity-70">
+              (Press Ctrl+Enter to explain)
+            </span>
           </div>
 
           {text.length > 0 && (
@@ -213,7 +219,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               id="btn-clear-text"
               type="button"
               onClick={() => onChangeText('')}
-              className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-600 transition-colors"
+              className="inline-flex items-center gap-1 hover:text-[var(--accent-keypoints)] transition-colors cursor-pointer"
               title="Clear input text"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -223,12 +229,9 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         </div>
       </div>
 
-      {/* Try an Example Chips */}
-      <div className="mt-3.5 flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-        <span className="text-slate-400 shrink-0 flex items-center gap-1 font-medium">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-          Try an example:
-        </span>
+      {/* Try an Example Prompts */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-left">
+        <span className="text-[var(--text-muted)] mr-1">Try an example:</span>
         {SAMPLE_TOPICS.map((topic, i) => (
           <button
             key={i}
@@ -238,87 +241,91 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               onChangeText(topic.text);
               onChangeLevel(topic.level);
             }}
-            className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-50/70 hover:bg-amber-100 text-slate-700 border border-amber-200/60 font-medium transition-colors cursor-pointer"
+            className="text-[var(--text-ink)] hover:text-[var(--accent-simple)] underline decoration-[var(--color-border)] underline-offset-2 py-0.5 px-1 rounded transition-colors cursor-pointer"
           >
             {topic.title}
           </button>
         ))}
       </div>
 
-      {/* Level Selector & Explain Trigger */}
-      <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Explanation Level Selector */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Explanation Level
-          </label>
-          <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 gap-1">
+      {/* Segmented Pill Level Selector & Explain Trigger */}
+      <div className="mt-5 pt-4 border-t border-[var(--color-border-subtle)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-left">
+        {/* Segmented Pill Toggle for Level */}
+        <div className="space-y-1">
+          <span className="text-xs text-[var(--text-muted)] font-sans block">
+            Explanation level
+          </span>
+          <div
+            id="segmented-level-toggle"
+            role="radiogroup"
+            aria-label="Explanation level"
+            className="inline-flex p-1 bg-[var(--pill-bg)] rounded-full border border-[var(--color-border)]"
+          >
             <button
               id="level-btn-very-simple"
               type="button"
+              role="radio"
+              aria-checked={level === 'very_simple'}
               onClick={() => onChangeLevel('very_simple')}
-              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                 level === 'very_simple'
-                  ? 'bg-amber-400 text-slate-900 shadow-xs ring-1 ring-amber-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
               }`}
             >
-              <span>👶</span>
-              <span>Very Simple</span>
-              <span className="hidden sm:inline text-[11px] font-normal opacity-85">(ELI5)</span>
+              Very simple
             </button>
 
             <button
               id="level-btn-simple"
               type="button"
+              role="radio"
+              aria-checked={level === 'simple'}
               onClick={() => onChangeLevel('simple')}
-              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                 level === 'simple'
-                  ? 'bg-amber-400 text-slate-900 shadow-xs ring-1 ring-amber-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
               }`}
             >
-              <span>🎒</span>
-              <span>Simple</span>
-              <span className="hidden sm:inline text-[11px] font-normal opacity-85">(Student)</span>
+              Simple
             </button>
 
             <button
               id="level-btn-detailed"
               type="button"
+              role="radio"
+              aria-checked={level === 'detailed'}
               onClick={() => onChangeLevel('detailed')}
-              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                 level === 'detailed'
-                  ? 'bg-amber-400 text-slate-900 shadow-xs ring-1 ring-amber-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
               }`}
             >
-              <span>🔬</span>
-              <span>Detailed</span>
-              <span className="hidden sm:inline text-[11px] font-normal opacity-85">(Technical)</span>
+              Detailed
             </button>
           </div>
         </div>
 
-        {/* Big Action Button */}
-        <div className="flex items-end">
+        {/* Explain Action Button */}
+        <div className="flex sm:justify-end">
           <button
             id="btn-explain"
             type="button"
             disabled={isLoading || text.trim().length === 0}
             onClick={onExplain}
-            className="w-full md:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-semibold text-sm sm:text-base shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2 rounded-md bg-[var(--text-ink)] text-[var(--bg-paper)] font-medium text-xs sm:text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Translating to ELI5...</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Translating notes...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-amber-200" />
-                <span>Explain in Plain English</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Explain in plain English</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
           </button>

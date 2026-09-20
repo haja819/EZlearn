@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Trash2, ArrowRight, Clock, BookOpen } from 'lucide-react';
+import { X, History, Clock, BookOpen } from 'lucide-react';
 import { StudyExplanation } from '../types';
 
 interface HistoryDrawerProps {
@@ -25,41 +25,43 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-md bg-white h-full shadow-2xl z-10 flex flex-col border-l border-amber-200">
+      <div className="relative w-full max-w-sm bg-[var(--bg-paper)] text-[var(--text-ink)] h-full z-10 flex flex-col border-l border-[var(--color-border)]">
         {/* Drawer Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
-              <History className="w-4 h-4" />
-            </div>
+        <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-[var(--accent-simple)]" />
             <div>
-              <h3 className="font-bold text-slate-900 font-display">Session History</h3>
-              <p className="text-xs text-slate-500">Past explanations from this study session</p>
+              <h3 className="font-serif font-bold text-base text-[var(--text-ink)]">
+                Session history
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] font-sans">
+                Past explanations from this notebook session
+              </p>
             </div>
           </div>
           <button
             id="close-history-drawer"
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-ink)] rounded transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {history.length === 0 ? (
-            <div className="text-center py-12 px-4 text-slate-400">
-              <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-500" />
-              <p className="text-sm font-medium text-slate-600">No explanations saved yet</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Paste any text and hit "Explain" to start building your study log!
+            <div className="text-center py-12 px-4 text-[var(--text-muted)]">
+              <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40 text-[var(--text-ink)]" />
+              <p className="text-sm font-medium">No past notes yet</p>
+              <p className="text-xs mt-1">
+                Your explained topics will appear here during this study session.
               </p>
             </div>
           ) : (
@@ -78,34 +80,25 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                     onSelect(item);
                     onClose();
                   }}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-md border-l-[3px] border text-left transition-colors cursor-pointer ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-50/70 ring-1 ring-amber-400 shadow-2xs'
-                      : 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/30 bg-white'
+                      ? 'border-l-[var(--accent-simple)] border-[var(--color-border)] bg-[var(--input-bg)]'
+                      : 'border-l-[var(--color-border)] border-[var(--color-border-subtle)] hover:border-l-[var(--accent-simple)] bg-[var(--bg-paper)]'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                      {item.level === 'very_simple' ? '👶 ELI5' : item.level === 'simple' ? '🎒 Student' : '🔬 Detailed'}
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium text-[var(--text-ink)]">
+                      {item.topic || (item.level === 'very_simple' ? 'Very simple' : item.level === 'simple' ? 'Simple' : 'Detailed')}
                     </span>
-                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                    <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {dateStr}
                     </span>
                   </div>
 
-                  <p className="text-xs font-bold text-slate-800 line-clamp-1 font-display mb-1">
-                    {item.originalText}
-                  </p>
-
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed">
                     {item.simple}
                   </p>
-
-                  <div className="mt-2.5 flex items-center justify-end text-xs font-semibold text-amber-700 gap-1">
-                    <span>View Explanation</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </div>
                 </div>
               );
             })
@@ -114,18 +107,17 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
 
         {/* Drawer Footer */}
         {history.length > 0 && (
-          <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-medium">
-              {history.length} {history.length === 1 ? 'item' : 'items'} saved
+          <div className="p-3 border-t border-[var(--color-border)] flex items-center justify-between">
+            <span className="text-xs text-[var(--text-muted)]">
+              {history.length} saved {history.length === 1 ? 'note' : 'notes'}
             </span>
             <button
-              id="btn-clear-history"
+              id="clear-history-btn"
               type="button"
               onClick={onClearHistory}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-800 px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+              className="text-xs text-[var(--accent-keypoints)] hover:underline cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear History</span>
+              Clear notes
             </button>
           </div>
         )}

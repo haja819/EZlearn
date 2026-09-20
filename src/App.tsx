@@ -6,7 +6,7 @@ import { QuizCard } from './components/QuizCard';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { HelpModal } from './components/HelpModal';
 import { ExplanationLevel, StudyExplanation } from './types';
-import { Sparkles, AlertCircle, RefreshCw, BookOpen, ArrowUp, Lightbulb } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 const STORAGE_KEY = 'eli5_study_translator_history';
 
@@ -41,7 +41,6 @@ export default function App() {
             }));
           if (sanitizedHistory.length > 0) {
             setHistory(sanitizedHistory);
-            // Set latest explanation as current active
             setCurrentExplanation(sanitizedHistory[0]);
             setText(sanitizedHistory[0].originalText);
             setLevel(sanitizedHistory[0].level || 'very_simple');
@@ -149,7 +148,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-amber-50/30 text-slate-800">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-paper)] text-[var(--text-ink)] font-sans">
       {/* Top App Header */}
       <Header
         historyCount={history.length}
@@ -157,22 +156,19 @@ export default function App() {
         onOpenHelp={() => setIsHelpOpen(true)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Friendly Welcome / Subtitle Banner */}
-        <div className="text-center space-y-2 mb-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-900 border border-amber-200">
-            <span>✨ Turn Academic Jargon into Crystal-Clear Mental Anchors</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display tracking-tight">
-            Study Smarter, Not Harder
+      {/* Main Single Centered Column (max-width ~640px, left-aligned) */}
+      <main className="flex-1 max-w-[640px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8 text-left">
+        {/* Intro Subtitle */}
+        <div className="space-y-1">
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--text-ink)] leading-tight">
+            Turn confusing notes into plain English
           </h2>
-          <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
-            No endless walls of text. Get high-impact ELI5 breakdowns, relatable analogies, auto-extracted key points, and instant self-check quizzes.
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+            Get structured breakdowns, everyday analogies, key takeaways, and quick self-check questions.
           </p>
         </div>
 
-        {/* Input Card */}
+        {/* Input Block */}
         <InputPanel
           text={text}
           onChangeText={setText}
@@ -186,17 +182,19 @@ export default function App() {
         {error && (
           <div
             id="error-alert"
-            className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3 shadow-xs"
+            className="p-3.5 border-l-[3px] border-[var(--accent-keypoints)] bg-[var(--input-bg)] text-[var(--text-ink)] flex items-start justify-between gap-3 text-xs sm:text-sm rounded-r-md"
           >
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div className="flex-1 text-sm">
-              <span className="font-bold block mb-0.5">Could not translate text</span>
-              <p>{error}</p>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-[var(--accent-keypoints)] shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-semibold block">Could not translate</strong>
+                <p className="text-[var(--text-muted)]">{error}</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => handleExplain()}
-              className="text-xs font-bold text-rose-700 underline hover:text-rose-900 cursor-pointer"
+              className="text-xs font-semibold text-[var(--accent-keypoints)] underline hover:opacity-80 cursor-pointer shrink-0"
             >
               Retry
             </button>
@@ -206,38 +204,27 @@ export default function App() {
         {/* Results Container / Anchor */}
         <div ref={resultsRef} className="pt-2">
           {isLoading && (
-            <div id="loading-skeleton" className="space-y-4 py-8">
-              <div className="p-6 rounded-2xl bg-white border border-amber-200/80 shadow-xs animate-pulse space-y-3">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-amber-200" />
-                  <div className="h-5 bg-amber-200/80 rounded w-1/4" />
-                </div>
-                <div className="h-4 bg-slate-200 rounded w-5/6" />
-                <div className="h-4 bg-slate-200 rounded w-4/6" />
-                <div className="h-4 bg-slate-200 rounded w-3/6" />
+            <div id="loading-skeleton" className="space-y-5 py-4">
+              <div className="border-l-[3px] border-[var(--accent-simple)] pl-4 py-1 space-y-2 opacity-60">
+                <div className="h-4 bg-[var(--color-border)] rounded w-1/3" />
+                <div className="h-3.5 bg-[var(--color-border)] rounded w-full" />
+                <div className="h-3.5 bg-[var(--color-border)] rounded w-4/5" />
               </div>
 
-              <div className="p-6 rounded-2xl bg-white border border-emerald-200/80 shadow-xs animate-pulse space-y-3">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-200" />
-                  <div className="h-5 bg-emerald-200/80 rounded w-1/3" />
-                </div>
-                <div className="h-4 bg-slate-200 rounded w-full" />
-                <div className="h-4 bg-slate-200 rounded w-3/4" />
+              <div className="border-l-[3px] border-[var(--accent-example)] pl-4 py-1 space-y-2 opacity-60">
+                <div className="h-4 bg-[var(--color-border)] rounded w-1/4" />
+                <div className="h-3.5 bg-[var(--color-border)] rounded w-5/6" />
               </div>
 
-              <div className="text-center py-4">
-                <p className="text-sm font-semibold text-amber-800 flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4 animate-spin text-amber-600" />
-                  <span>Synthesizing analogies, breakdowns, and quiz questions...</span>
-                </p>
-              </div>
+              <p className="text-xs text-[var(--text-muted)] font-sans italic pl-4">
+                Writing your notebook explanation...
+              </p>
             </div>
           )}
 
           {!isLoading && currentExplanation && (
-            <div className="space-y-8 animate-fade-in">
-              {/* Main 5-Part Structured Explanation */}
+            <div className="notebook-fade-in space-y-8">
+              {/* Main 5-Part Structured Explanation with Left Borders Only */}
               <ExplanationView
                 key={`explanation-${currentExplanation.id}`}
                 explanation={currentExplanation}
@@ -247,7 +234,7 @@ export default function App() {
                 }}
               />
 
-              {/* Auto-Generated Multiple Choice Knowledge Quiz */}
+              {/* Self-check questions */}
               <QuizCard
                 key={`quiz-${currentExplanation.id}`}
                 quiz={currentExplanation.quiz}
@@ -256,19 +243,14 @@ export default function App() {
           )}
 
           {!isLoading && !currentExplanation && (
-            <div className="rounded-2xl border border-dashed border-amber-300/80 bg-white/60 p-8 sm:p-10 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center mx-auto text-2xl shadow-2xs">
-                💡
-              </div>
-              <div className="max-w-md mx-auto space-y-1.5">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 font-display">
-                  Ready to translate difficult study material?
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                  Paste any difficult textbook excerpt or homework prompt above, or pick one of the quick sample topics to see the 5-step breakdown in action.
-                </p>
-              </div>
-              <div className="pt-2 flex flex-wrap justify-center gap-2">
+            <div className="border border-[var(--color-border)] p-6 rounded-md space-y-3">
+              <h3 className="text-base font-serif font-semibold text-[var(--text-ink)]">
+                Ready to study
+              </h3>
+              <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+                Paste any difficult textbook excerpt or homework prompt above, or try one of these sample topics:
+              </p>
+              <div className="pt-1 flex flex-wrap gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => {
@@ -277,9 +259,9 @@ export default function App() {
                     setLevel('very_simple');
                     handleExplain(sample, 'very_simple');
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-950 text-xs font-semibold border border-amber-300/70 transition-colors shadow-2xs cursor-pointer"
+                  className="px-2.5 py-1 rounded border border-[var(--color-border)] hover:border-[var(--text-ink)] text-[var(--text-ink)] transition-colors cursor-pointer"
                 >
-                  ⚡ Try: Mitochondria & ATP (ELI5)
+                  Mitochondria & ATP
                 </button>
                 <button
                   type="button"
@@ -289,9 +271,9 @@ export default function App() {
                     setLevel('simple');
                     handleExplain(sample, 'simple');
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+                  className="px-2.5 py-1 rounded border border-[var(--color-border)] hover:border-[var(--text-ink)] text-[var(--text-ink)] transition-colors cursor-pointer"
                 >
-                  ⚛️ Try: Quantum Superposition (Student)
+                  Quantum superposition
                 </button>
               </div>
             </div>
@@ -300,10 +282,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-amber-200/40 py-6 text-center text-xs text-slate-400 bg-white/40">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>EZlearn • Designed for stressed students studying anywhere</span>
-          <span>Zero accounts required • Instant structured breakdowns</span>
+      <footer className="mt-auto border-t border-[var(--color-border)] py-6 text-xs text-[var(--text-muted)]">
+        <div className="max-w-[640px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-baseline justify-between gap-2">
+          <span>EZlearn study notebook</span>
+          <span>Structured mental anchors in plain English</span>
         </div>
       </footer>
 

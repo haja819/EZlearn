@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Baby,
-  Sprout,
-  Puzzle,
-  Target,
-  Brain,
   Volume2,
   VolumeX,
   Copy,
@@ -13,10 +8,6 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  Sparkles,
-  RefreshCw,
-  Bookmark,
-  Share2
 } from 'lucide-react';
 import { StudyExplanation, PointClarificationState } from '../types';
 
@@ -64,8 +55,8 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
   // Handle Web Speech Synthesis for audio readout
   const handleToggleSpeech = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      setSpeechNotice('Speech audio is not available in this browser view.');
-      setTimeout(() => setSpeechNotice(null), 3500);
+      setSpeechNotice('Speech audio is not supported in this browser view.');
+      setTimeout(() => setSpeechNotice(null), 3000);
       return;
     }
 
@@ -80,11 +71,11 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
     }
 
     try {
-      window.speechSynthesis.cancel(); // Stop any pending utterances
+      window.speechSynthesis.cancel();
       const memoryHook = explanation.remember || explanation.mnemonic || '';
       const textToRead = `${explanation.simple || ''}. Imagine this: ${explanation.example || ''}. Key points: ${(explanation.keyPoints || []).join('. ')}. To remember it: ${memoryHook}`;
       const utterance = new SpeechSynthesisUtterance(textToRead);
-      utterance.rate = 0.95; // Slightly calmer speaking rate for learning
+      utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
@@ -92,8 +83,8 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
       window.speechSynthesis.speak(utterance);
       setIsSpeaking(true);
     } catch (err) {
-      setSpeechNotice('Audio playback could not start in iframe mode.');
-      setTimeout(() => setSpeechNotice(null), 3500);
+      setSpeechNotice('Audio playback could not be started.');
+      setTimeout(() => setSpeechNotice(null), 3000);
       setIsSpeaking(false);
     }
   };
@@ -104,11 +95,10 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
-  // Follow-up point clarification ("I still don't understand [X]")
+  // Follow-up point clarification ("I don't understand this point")
   const handleClarifyPoint = async (pointIndex: number, pointText: string) => {
     const current = pointStates[pointIndex];
     if (current?.data) {
-      // If already fetched, toggle expansion
       setPointStates((prev) => ({
         ...prev,
         [pointIndex]: {
@@ -156,360 +146,298 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
         ...prev,
         [pointIndex]: {
           loading: false,
-          error: err.message || 'Could not simplify right now. Please try again.',
+          error: err.message || 'Could not simplify right now.',
           expanded: true,
         },
       }));
     }
   };
 
+  const levelNames: Record<string, string> = {
+    very_simple: 'Very simple level',
+    simple: 'Simple student level',
+    detailed: 'Detailed level',
+  };
+
   return (
-    <div id="explanation-container" className="space-y-6">
-      {/* Top Banner with speech readout and level indicator */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {explanation.topic && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shadow-2xs">
-              <span>📌 {explanation.topic}</span>
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/90 text-amber-900 border border-amber-300/60">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>
-              {explanation.level === 'very_simple' && 'ELI5 (Explain Like I’m 5)'}
-              {explanation.level === 'simple' && 'Standard Student Level'}
-              {explanation.level === 'detailed' && 'Detailed Technical Breakdown'}
-            </span>
-          </span>
-          <span className="text-xs text-slate-400">
-            {new Date(explanation.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
+    <div id="explanation-container" className="space-y-8 text-left">
+      {/* Notebook Header Bar */}
+      <div className="border-b border-[var(--color-border)] pb-4 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            {explanation.topic && (
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[var(--text-ink)] leading-tight">
+                {explanation.topic}
+              </h2>
+            )}
+            <p className="text-xs text-[var(--text-muted)] font-sans mt-0.5">
+              {levelNames[explanation.level] || 'Study explanation'}
+            </p>
+          </div>
+
+          {/* Quick Actions (Audio Readout & Copy All) */}
+          <div className="flex items-center gap-2">
+            <button
+              id="btn-read-aloud"
+              type="button"
+              onClick={handleToggleSpeech}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border border-[var(--color-border)] hover:bg-[var(--pill-bg)] text-[var(--text-ink)] transition-colors cursor-pointer"
+              title="Listen to this explanation read aloud"
+            >
+              {isSpeaking ? (
+                <>
+                  <VolumeX className="w-3.5 h-3.5 text-[var(--accent-keypoints)]" />
+                  <span>Stop audio</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 text-[var(--accent-example)]" />
+                  <span>Read aloud</span>
+                </>
+              )}
+            </button>
+
+            <button
+              id="btn-copy-all"
+              type="button"
+              onClick={() => {
+                const fullText = `${explanation.topic ? `${explanation.topic}\n\n` : ''}Simple explanation:\n${explanation.simple}\n\nReal-life example:\n${explanation.example}\n\nKey points:\n${explanation.keyPoints.map(p => `• ${p}`).join('\n')}\n\nRemember:\n${explanation.remember || explanation.mnemonic}`;
+                handleCopyText(fullText, 'all');
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border border-[var(--color-border)] hover:bg-[var(--pill-bg)] text-[var(--text-ink)] transition-colors cursor-pointer"
+              title="Copy entire study note to clipboard"
+            >
+              {copiedSection === 'all' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-[var(--accent-example)]" />
+                  <span>Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  <span>Copy note</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            id="btn-read-aloud"
-            type="button"
-            onClick={handleToggleSpeech}
-            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-              isSpeaking
-                ? 'bg-amber-500 text-white border-amber-600 animate-pulse'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-            }`}
-            title="Listen to this explanation read aloud"
-          >
-            {isSpeaking ? (
-              <>
-                <VolumeX className="w-3.5 h-3.5" />
-                <span>Stop Listening</span>
-              </>
-            ) : (
-              <>
-                <Volume2 className="w-3.5 h-3.5 text-amber-600" />
-                <span>Read Aloud</span>
-              </>
-            )}
-          </button>
-        </div>
+        {explanation.unclear && (
+          <div className="p-3 border-l-[3px] border-[var(--accent-simple)] bg-[var(--input-bg)] text-xs text-[var(--text-ink)] rounded-r-md">
+            <p className="font-semibold mb-0.5">Brief query note</p>
+            <p className="text-[var(--text-muted)]">
+              This input was short or general. Your tutor explained the primary academic meaning. If you had a specific question, you can paste the full textbook sentence.
+            </p>
+          </div>
+        )}
+
+        {speechNotice && (
+          <div className="p-2.5 border-l-[3px] border-[var(--accent-simple)] bg-[var(--input-bg)] text-xs text-[var(--text-ink)] rounded-r-md flex items-center justify-between">
+            <span>{speechNotice}</span>
+            <button
+              type="button"
+              onClick={() => setSpeechNotice(null)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-ink)] ml-2"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
-      {explanation.unclear && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm rounded-xl flex items-start gap-2.5">
-          <span className="text-base">💡</span>
-          <div>
-            <strong className="font-semibold block">Ambiguous or Brief Query</strong>
-            <span>
-              This input was very short or general. Your tutor explained the most common academic meaning above. If you had a specific sub-topic in mind, try pasting the full textbook question or sentence!
-            </span>
-          </div>
-        </div>
-      )}
-
-      {speechNotice && (
-        <div className="p-3 bg-amber-100/80 border border-amber-300 text-amber-950 text-xs rounded-xl flex items-center justify-between">
-          <span>{speechNotice}</span>
-          <button
-            type="button"
-            onClick={() => setSpeechNotice(null)}
-            className="text-amber-700 font-bold ml-2 text-xs"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* SECTION 1: 👶 Super Simple */}
+      {/* SECTION 1: Simple Explanation (Mustard Left Border #C98A12) */}
       <section
         id="section-super-simple"
-        className="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50/90 via-amber-50/40 to-white p-5 sm:p-6 shadow-xs relative overflow-hidden"
+        className="border-l-[3px] sm:border-l-4 border-[var(--accent-simple)] pl-4 sm:pl-5 py-1"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10" />
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-lg shadow-2xs">
-              👶
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-amber-950 font-display">
-                Super Simple
-              </h3>
-              <p className="text-xs text-amber-800/80 font-medium">
-                One or two plain sentences, zero academic jargon
-              </p>
-            </div>
-          </div>
-
+        <div className="flex items-baseline justify-between gap-3 mb-1.5">
+          <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--text-ink)]">
+            Simple explanation
+          </h3>
           <button
             id="btn-copy-super-simple"
             type="button"
             onClick={() => handleCopyText(explanation.simple, 'simple')}
-            className="p-1.5 text-amber-800/60 hover:text-amber-900 rounded-lg hover:bg-amber-100/60 transition-colors"
-            title="Copy plain summary"
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-ink)] p-1 transition-colors cursor-pointer"
+            title="Copy simple explanation"
           >
             {copiedSection === 'simple' ? (
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-3.5 h-3.5 text-[var(--accent-example)]" />
             ) : (
-              <Copy className="w-4 h-4" />
+              <Copy className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
-
-        <p className="text-base sm:text-lg font-medium text-slate-800 leading-relaxed mt-3 pl-1">
+        <p className="text-sm sm:text-base text-[var(--text-ink)] font-sans leading-relaxed">
           {explanation.simple}
         </p>
       </section>
 
-      {/* SECTION 2: 🌱 Real-life Example */}
+      {/* SECTION 2: Real-Life Example (Teal Left Border #1F6F63) */}
       <section
         id="section-real-life-example"
-        className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 via-emerald-50/20 to-white p-5 sm:p-6 shadow-xs relative overflow-hidden"
+        className="border-l-[3px] sm:border-l-4 border-[var(--accent-example)] pl-4 sm:pl-5 py-1"
       >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-lg shadow-2xs">
-              🌱
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-emerald-950 font-display">
-                Real-Life Example
-              </h3>
-              <p className="text-xs text-emerald-800/80 font-medium">
-                An "Imagine..." style everyday analogy you can visualize
-              </p>
-            </div>
-          </div>
-
+        <div className="flex items-baseline justify-between gap-3 mb-1.5">
+          <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--text-ink)]">
+            Real-life example
+          </h3>
           <button
             id="btn-copy-example"
             type="button"
             onClick={() => handleCopyText(explanation.example, 'example')}
-            className="p-1.5 text-emerald-800/60 hover:text-emerald-900 rounded-lg hover:bg-emerald-100/60 transition-colors"
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-ink)] p-1 transition-colors cursor-pointer"
             title="Copy example"
           >
             {copiedSection === 'example' ? (
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-3.5 h-3.5 text-[var(--accent-example)]" />
             ) : (
-              <Copy className="w-4 h-4" />
+              <Copy className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
-
-        <div className="bg-white/80 border border-emerald-200/60 rounded-xl p-4 text-slate-800 text-sm sm:text-base leading-relaxed italic text-emerald-950">
-          "{explanation.example}"
-        </div>
+        <p className="text-sm sm:text-base text-[var(--text-ink)] font-sans leading-relaxed italic opacity-95">
+          {explanation.example}
+        </p>
       </section>
 
-      {/* SECTION 3: 🧩 Break It Down (shown when concept has distinct parts) */}
+      {/* SECTION 3: Break It Down (Breakdown Left Border) */}
       {explanation.breakdown && explanation.breakdown.length > 0 && (
         <section
           id="section-breakdown"
-          className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50/60 via-sky-50/20 to-white p-5 sm:p-6 shadow-xs relative"
+          className="border-l-[3px] sm:border-l-4 border-[var(--accent-breakdown)] pl-4 sm:pl-5 py-1 space-y-3"
         >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-lg shadow-2xs">
-                🧩
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-sky-950 font-display">
-                  Break It Down
-                </h3>
-                <p className="text-xs text-sky-800/80 font-medium">
-                  Concept → Parts → How they connect
-                </p>
-              </div>
-            </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--text-ink)]">
+              Break it down
+            </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="space-y-2.5">
             {explanation.breakdown.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-xl border border-sky-100 p-4 shadow-2xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-bold text-xs flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <h4 className="font-bold text-slate-900 text-sm font-display">
-                      {item.part}
-                    </h4>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    {item.explanation || item.description}
-                  </p>
-                </div>
+              <div key={idx} className="space-y-0.5">
+                <h4 className="text-sm font-semibold font-serif text-[var(--text-ink)]">
+                  {idx + 1}. {item.part}
+                </h4>
+                <p className="text-xs sm:text-sm text-[var(--text-muted)] font-sans leading-relaxed pl-3.5">
+                  {item.explanation || item.description}
+                </p>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* SECTION 4: 🎯 Key Points + Point-Specific Re-explanation */}
+      {/* SECTION 4: Key Points (Berry Left Border #9C3648) */}
       <section
         id="section-key-points"
-        className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/50 via-indigo-50/20 to-white p-5 sm:p-6 shadow-xs"
+        className="border-l-[3px] sm:border-l-4 border-[var(--accent-keypoints)] pl-4 sm:pl-5 py-1 space-y-3"
       >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-lg shadow-2xs">
-              🎯
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-indigo-950 font-display">
-                Key Points
-              </h3>
-              <p className="text-xs text-indigo-800/80 font-medium">
-                Core takeaways — click "I don't get this one" on any point for an extra-simple breakdown
-              </p>
-            </div>
-          </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--text-ink)]">
+            Key points
+          </h3>
         </div>
 
-        <div className="space-y-3.5">
+        <ul className="space-y-3 list-none p-0 m-0">
           {explanation.keyPoints.map((point, idx) => {
             const state = pointStates[idx];
             const isExpanded = state?.expanded;
 
             return (
-              <div
-                key={idx}
-                className="bg-white rounded-xl border border-indigo-100/90 p-4 transition-all shadow-2xs"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0" />
-                    <p className="text-sm sm:text-base text-slate-800 font-medium leading-relaxed">
+              <li key={idx} className="space-y-1.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 flex-1">
+                    <span className="text-[var(--accent-keypoints)] font-bold text-xs mt-1">
+                      —
+                    </span>
+                    <p className="text-sm sm:text-base text-[var(--text-ink)] font-sans leading-relaxed">
                       {point}
                     </p>
                   </div>
 
-                  {/* "I don't get this one" button */}
+                  {/* "I don't get this one" margin clarification trigger */}
                   <button
                     id={`btn-clarify-point-${idx}`}
                     type="button"
                     disabled={state?.loading}
                     onClick={() => handleClarifyPoint(idx, point)}
-                    className="shrink-0 self-start inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70 transition-colors disabled:opacity-60 cursor-pointer"
-                    title="Ask AI to re-explain just this point in an ultra-simple way"
+                    className="shrink-0 text-xs text-[var(--text-muted)] hover:text-[var(--text-ink)] underline decoration-[var(--color-border)] underline-offset-2 transition-colors disabled:opacity-50 cursor-pointer pt-0.5"
+                    title="Ask for a simpler re-explanation of just this point"
                   >
                     {state?.loading ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Simplifying...</span>
-                      </>
+                      <span className="inline-flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-simple)]" />
+                        <span>Explaining...</span>
+                      </span>
                     ) : (
-                      <>
-                        <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>I don't get this one</span>
+                      <span className="inline-flex items-center gap-1">
+                        <HelpCircle className="w-3 h-3 text-[var(--accent-keypoints)]" />
+                        <span>Clarify this</span>
                         {state?.data && (
-                          isExpanded ? <ChevronUp className="w-3.5 h-3.5 ml-0.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+                          isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                         )}
-                      </>
+                      </span>
                     )}
                   </button>
                 </div>
 
                 {/* Inline Re-explanation Callout */}
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-indigo-100/80">
+                  <div className="ml-5 mt-2 pl-3 border-l-2 border-[var(--accent-simple)] bg-[var(--input-bg)] py-2 pr-3 rounded-r-md text-xs sm:text-sm text-[var(--text-ink)] space-y-1.5">
                     {state.error ? (
-                      <div className="p-3 bg-rose-50 text-rose-800 rounded-lg text-xs">
+                      <div className="text-[var(--accent-keypoints)]">
                         {state.error}
                       </div>
                     ) : state.data ? (
-                      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3.5 border border-amber-200/80 text-xs sm:text-sm text-slate-800 space-y-2">
-                        <div className="flex items-center gap-1.5 text-amber-900 font-bold font-display">
-                          <span>🧸</span>
-                          <span>Extra-Simple Breakdown of this point:</span>
-                        </div>
-                        <p className="text-slate-700 leading-relaxed font-medium">
+                      <>
+                        <p className="font-medium leading-relaxed">
                           {state.data.simplifiedExplanation}
                         </p>
-                        <div className="bg-white/90 p-2.5 rounded-lg border border-amber-200/60">
-                          <p className="text-xs text-amber-950">
-                            <strong className="font-semibold text-amber-900">Analogous picture:</strong> {state.data.analogy}
-                          </p>
-                        </div>
-                        <div className="text-xs font-semibold text-amber-900 flex items-center gap-1">
-                          <span>💡 Takeaway:</span>
-                          <span className="font-normal text-slate-700">{state.data.takeaway}</span>
-                        </div>
-                      </div>
+                        <p className="text-xs text-[var(--text-muted)] italic">
+                          Imagine: {state.data.analogy}
+                        </p>
+                        <p className="text-xs text-[var(--text-ink)] font-medium">
+                          Takeaway: {state.data.takeaway}
+                        </p>
+                      </>
                     ) : null}
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </section>
 
-      {/* SECTION 5: 🧠 Remember It */}
+      {/* SECTION 5: Remember It (Berry Left Border #9C3648) */}
       {(explanation.remember || explanation.mnemonic) && (
         <section
           id="section-mnemonic"
-          className="rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 via-rose-50/20 to-white p-5 sm:p-6 shadow-xs relative overflow-hidden"
+          className="border-l-[3px] sm:border-l-4 border-[var(--accent-keypoints)] pl-4 sm:pl-5 py-1"
         >
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-lg shadow-2xs">
-                🧠
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-rose-950 font-display">
-                  Remember It
-                </h3>
-                <p className="text-xs text-rose-800/80 font-medium">
-                  Short memorable line, formula, or snappy memory hook
-                </p>
-              </div>
-            </div>
-
+          <div className="flex items-baseline justify-between gap-3 mb-1.5">
+            <h3 className="text-base sm:text-lg font-serif font-bold text-[var(--text-ink)]">
+              Remember this
+            </h3>
             <button
               id="btn-copy-mnemonic"
               type="button"
               onClick={() => handleCopyText(explanation.remember || explanation.mnemonic || '', 'mnemonic')}
-              className="p-1.5 text-rose-800/60 hover:text-rose-900 rounded-lg hover:bg-rose-100/60 transition-colors"
-              title="Copy memory hook"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-ink)] p-1 transition-colors cursor-pointer"
+              title="Copy memory anchor"
             >
               {copiedSection === 'mnemonic' ? (
-                <Check className="w-4 h-4 text-emerald-600" />
+                <Check className="w-3.5 h-3.5 text-[var(--accent-example)]" />
               ) : (
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
 
-          <div className="bg-white/90 border border-rose-200/70 rounded-xl p-4 text-rose-950 font-medium text-sm sm:text-base leading-relaxed flex items-center gap-3">
-            <div className="w-2 h-10 bg-rose-400 rounded-full shrink-0" />
-            <div>
-              <span className="font-display font-bold text-slate-900 text-base sm:text-lg block">
-                {explanation.remember || explanation.mnemonic}
-              </span>
-            </div>
-          </div>
+          <p className="text-sm sm:text-base font-serif font-medium text-[var(--text-ink)] leading-relaxed">
+            "{explanation.remember || explanation.mnemonic}"
+          </p>
         </section>
       )}
     </div>
