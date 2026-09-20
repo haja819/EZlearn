@@ -1,0 +1,6 @@
+{
+  "name": "EZlearn",
+  "description": "Translates difficult academic text into structured, simple explanations with real-world analogies, breakdowns, interactive point clarification, and self-check quizzes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
