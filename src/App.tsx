@@ -235,6 +235,48 @@ export default function App() {
               <QuizCard quiz={currentExplanation.quiz} />
             </div>
           )}
+
+          {!isLoading && !currentExplanation && (
+            <div className="rounded-2xl border border-dashed border-amber-300/80 bg-white/60 p-8 sm:p-10 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center mx-auto text-2xl shadow-2xs">
+                💡
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 font-display">
+                  Ready to translate difficult study material?
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Paste any difficult textbook excerpt or homework prompt above, or pick one of the quick sample topics to see the 5-step breakdown in action.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sample = "Mitochondria generate most of the cell's supply of adenosine triphosphate (ATP), used as a source of chemical energy through oxidative phosphorylation. High-energy electrons travel through the electron transport chain, generating a proton gradient across the inner mitochondrial membrane.";
+                    setText(sample);
+                    setLevel('very_simple');
+                    handleExplain(sample, 'very_simple');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-950 text-xs font-semibold border border-amber-300/70 transition-colors shadow-2xs cursor-pointer"
+                >
+                  ⚡ Try: Mitochondria & ATP (ELI5)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sample = "Quantum superposition is a fundamental principle of quantum mechanics stating that any two or more quantum states can be added together and the result will be another valid quantum state. An electron exists partly in all theoretically possible states simultaneously until measurement.";
+                    setText(sample);
+                    setLevel('simple');
+                    handleExplain(sample, 'simple');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold border border-slate-200 transition-colors shadow-2xs cursor-pointer"
+                >
+                  ⚛️ Try: Quantum Superposition (Student)
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

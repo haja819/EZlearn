@@ -30,31 +30,56 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
 }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const [pointStates, setPointStates] = useState<Record<number, PointClarificationState>>({});
+
+  // Cleanup speech synthesis on unmount
+  React.useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   // Handle Web Speech Synthesis for audio readout
   const handleToggleSpeech = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('Speech synthesis is not supported in this browser.');
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setSpeechNotice('Speech audio is not available in this browser view.');
+      setTimeout(() => setSpeechNotice(null), 3500);
       return;
     }
 
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        // ignore
+      }
       setIsSpeaking(false);
       return;
     }
 
-    window.speechSynthesis.cancel(); // Stop any pending utterances
-    const textToRead = `${explanation.simple}. Imagine this: ${explanation.example}. Key points: ${explanation.keyPoints.join('. ')}. To remember it: ${explanation.mnemonic}`;
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-    utterance.rate = 0.95; // Slightly calmer speaking rate for learning
-    utterance.pitch = 1.0;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    try {
+      window.speechSynthesis.cancel(); // Stop any pending utterances
+      const textToRead = `${explanation.simple || ''}. Imagine this: ${explanation.example || ''}. Key points: ${(explanation.keyPoints || []).join('. ')}. To remember it: ${explanation.mnemonic || ''}`;
+      const utterance = new SpeechSynthesisUtterance(textToRead);
+      utterance.rate = 0.95; // Slightly calmer speaking rate for learning
+      utterance.pitch = 1.0;
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
 
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
+      window.speechSynthesis.speak(utterance);
+      setIsSpeaking(true);
+    } catch (err) {
+      setSpeechNotice('Audio playback could not start in iframe mode.');
+      setTimeout(() => setSpeechNotice(null), 3500);
+      setIsSpeaking(false);
+    }
   };
 
   const handleCopyText = (text: string, sectionKey: string) => {
@@ -166,6 +191,19 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
           </button>
         </div>
       </div>
+
+      {speechNotice && (
+        <div className="p-3 bg-amber-100/80 border border-amber-300 text-amber-950 text-xs rounded-xl flex items-center justify-between">
+          <span>{speechNotice}</span>
+          <button
+            type="button"
+            onClick={() => setSpeechNotice(null)}
+            className="text-amber-700 font-bold ml-2 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* SECTION 1: 👶 Super Simple */}
       <section

@@ -23,6 +23,31 @@ function getGeminiClient() {
   });
 }
 
+function parseJsonSafely(raw: string | undefined): any {
+  if (!raw) return {};
+  let str = raw.trim();
+  // Strip Markdown code blocks if present
+  if (str.startsWith("```json")) {
+    str = str.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+  } else if (str.startsWith("```")) {
+    str = str.replace(/^```\s*/, "").replace(/```\s*$/, "").trim();
+  }
+  try {
+    return JSON.parse(str);
+  } catch (err) {
+    const firstBrace = str.indexOf("{");
+    const lastBrace = str.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(str.substring(firstBrace, lastBrace + 1));
+      } catch (innerErr) {
+        throw err;
+      }
+    }
+    throw err;
+  }
+}
+
 async function startServer() {
   const app = express();
 
@@ -139,11 +164,28 @@ Please translate this into the structured format:
       });
 
       const rawText = response.text || "{}";
-      const parsedData = JSON.parse(rawText);
+      const parsedData = parseJsonSafely(rawText);
+
+      // Sanitize fields to guarantee predictable UI rendering
+      const sanitized = {
+        simple: parsedData.simple || "Here is the simple explanation.",
+        example: parsedData.example || "",
+        breakdown: Array.isArray(parsedData.breakdown) ? parsedData.breakdown : [],
+        keyPoints: Array.isArray(parsedData.keyPoints) ? parsedData.keyPoints : [],
+        mnemonic: parsedData.mnemonic || "",
+        quiz: Array.isArray(parsedData.quiz)
+          ? parsedData.quiz.map((q: any) => ({
+              question: q.question || "Conceptual check",
+              options: Array.isArray(q.options) && q.options.length >= 2 ? q.options : ["True", "False", "Partially", "None"],
+              correctIndex: typeof q.correctIndex === "number" && q.correctIndex >= 0 ? q.correctIndex : 0,
+              explanation: q.explanation || "Correct concept understanding.",
+            }))
+          : [],
+      };
 
       return res.json({
         success: true,
-        data: parsedData,
+        data: sanitized,
       });
     } catch (err: any) {
       console.error("Error in /api/explain:", err);
@@ -215,11 +257,17 @@ Re-explain ONLY this point in ultra-simple, reassuring terms so a student says '
       });
 
       const rawText = response.text || "{}";
-      const parsedData = JSON.parse(rawText);
+      const parsedData = parseJsonSafely(rawText);
+
+      const sanitized = {
+        simplifiedExplanation: parsedData.simplifiedExplanation || "Here is a simpler look at this specific point.",
+        analogy: parsedData.analogy || "",
+        takeaway: parsedData.takeaway || "",
+      };
 
       return res.json({
         success: true,
-        data: parsedData,
+        data: sanitized,
       });
     } catch (err: any) {
       console.error("Error in /api/simplify-point:", err);
