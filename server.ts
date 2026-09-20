@@ -72,27 +72,13 @@ async function startServer() {
 
       const selectedLevel = (level as string) || "very_simple";
 
-      const prompt = `You are a patient, encouraging study tutor. A student pasted the following text or question. It can be ANY subject, including a single term with no context.
+      const prompt = `You are a patient study tutor. Never say you can't understand or simplify the text below — if it's short or just a term, explain its most common academic meaning.
 
-Never say you cannot understand, simplify, or translate it. If the text is short or ambiguous, explain the most common academic meaning and briefly note your assumption. Only set "unclear": true if the text is truly empty or pure gibberish — this should almost never happen.
+Text: """${text.trim()}"""
+Level: ${selectedLevel}
 
-Student's text:
-"""
-${text.trim()}
-"""
-
-Level: ${selectedLevel} (very_simple = explain like I'm 5; simple = plain tutor explanation; detailed = deeper "why" explanation)
-
-Respond with ONLY this JSON, no markdown fences, no extra text:
-{
-  "topic": "short name",
-  "simple": "2-5 sentence explanation",
-  "example": "one everyday analogy",
-  "breakdown": [{"part": "...", "explanation": "..."}],
-  "keyPoints": ["...", "...", "..."],
-  "remember": "short memorable line",
-  "unclear": false
-}`;
+Respond with ONLY this JSON, nothing else:
+{"topic":"...","simple":"...","example":"...","breakdown":[{"part":"...","explanation":"..."}],"keyPoints":["..."],"remember":"..."}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3.8-flash",
@@ -104,15 +90,12 @@ Respond with ONLY this JSON, no markdown fences, no extra text:
             properties: {
               topic: {
                 type: Type.STRING,
-                description: "short name",
               },
               simple: {
                 type: Type.STRING,
-                description: "2-5 sentence explanation",
               },
               example: {
                 type: Type.STRING,
-                description: "one everyday analogy",
               },
               breakdown: {
                 type: Type.ARRAY,
@@ -131,13 +114,9 @@ Respond with ONLY this JSON, no markdown fences, no extra text:
               },
               remember: {
                 type: Type.STRING,
-                description: "short memorable line",
-              },
-              unclear: {
-                type: Type.BOOLEAN,
               },
             },
-            required: ["topic", "simple", "example", "breakdown", "keyPoints", "remember", "unclear"],
+            required: ["topic", "simple", "example", "breakdown", "keyPoints", "remember"],
           },
         },
       });
