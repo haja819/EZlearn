@@ -128,8 +128,13 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
         }),
       });
 
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Request failed (${response.status}): ${errText.slice(0, 200)}`);
+      }
+
       const resJson = await response.json();
-      if (!response.ok || resJson.error) {
+      if (resJson.error) {
         throw new Error(resJson.error || 'Failed to simplify point');
       }
 

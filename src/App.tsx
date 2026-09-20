@@ -84,9 +84,14 @@ export default function App() {
         }),
       });
 
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Request failed (${response.status}): ${errText.slice(0, 200)}`);
+      }
+
       const json = await response.json();
 
-      if (!response.ok || !json.success) {
+      if (!json.success) {
         throw new Error(json.error || 'Failed to generate explanation. Please try again.');
       }
 

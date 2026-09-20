@@ -53,8 +53,13 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             }),
           });
 
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Request failed (${res.status}): ${errText.slice(0, 200)}`);
+          }
+
           const data = await res.json();
-          if (!res.ok || data.error) {
+          if (data.error) {
             throw new Error(data.error || 'Failed to extract text from image.');
           }
 
