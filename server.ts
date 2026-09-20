@@ -72,44 +72,27 @@ async function startServer() {
 
       const selectedLevel = (level as string) || "very_simple";
 
-      const prompt = `You are a patient, encouraging study tutor. A student pasted the following text or question from their studies. It can be about ANY subject — science, math, history, language, economics, literature, coding, or a single term with no context.
+      const prompt = `You are a patient, encouraging study tutor. A student pasted the following text or question. It can be ANY subject, including a single term with no context.
 
-Never say you cannot understand, simplify, or translate it. If the text is short or ambiguous (e.g. just one term), explain the most common academic meaning of that term and briefly note your assumption. Only if the text is truly empty or pure gibberish with no discernible topic should you set "unclear" to true — this should almost never happen.
+Never say you cannot understand, simplify, or translate it. If the text is short or ambiguous, explain the most common academic meaning and briefly note your assumption. Only set "unclear": true if the text is truly empty or pure gibberish — this should almost never happen.
 
 Student's text:
 """
 ${text.trim()}
 """
 
-Explanation level: ${selectedLevel}
-- very_simple: Explain like the student is 5. Extremely simple words, short sentences, playful tone.
-- simple: Explain like a patient tutor talking to an average middle/high schooler. Plain language, no unexplained jargon.
-- detailed: A deeper explanation — the "why," not just the "what" — but still clear and well organized.
+Level: ${selectedLevel} (very_simple = explain like I'm 5; simple = plain tutor explanation; detailed = deeper "why" explanation)
 
-Respond with ONLY a JSON object, no markdown fences, no extra commentary:
+Respond with ONLY this JSON, no markdown fences, no extra text:
 {
-  "topic": "short name of the concept",
-  "simple": "2-5 sentence explanation in the requested style",
-  "example": "one everyday analogy, 1-3 sentences, starting naturally (e.g. 'Imagine...')",
-  "breakdown": [{"part": "component or step name", "explanation": "one short sentence"}],
-  "keyPoints": ["3-5 short, concrete, memorable points"],
-  "remember": "a very short memorable line or formula summing it up",
-  "unclear": false,
-  "quiz": [
-    {
-      "question": "clear conceptual question based on the content",
-      "options": ["option 1", "option 2", "option 3", "option 4"],
-      "correctIndex": 0,
-      "explanation": "friendly explanation of why this answer is correct"
-    }
-  ]
-}
-
-Rules:
-- "breakdown" gets 2-5 items ONLY if the concept genuinely has distinct parts/steps/components. Otherwise return [].
-- Ground everything in the actual text given — no generic filler.
-- Match the language of the student's text.
-- Auto-generate 3-5 multiple-choice quiz questions with exactly 4 options each, one correctIndex (0-3), and an encouraging explanation.`;
+  "topic": "short name",
+  "simple": "2-5 sentence explanation",
+  "example": "one everyday analogy",
+  "breakdown": [{"part": "...", "explanation": "..."}],
+  "keyPoints": ["...", "...", "..."],
+  "remember": "short memorable line",
+  "unclear": false
+}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3.8-flash",
@@ -121,61 +104,40 @@ Rules:
             properties: {
               topic: {
                 type: Type.STRING,
-                description: "short name of the concept",
+                description: "short name",
               },
               simple: {
                 type: Type.STRING,
-                description: "2-5 sentence explanation in the requested style",
+                description: "2-5 sentence explanation",
               },
               example: {
                 type: Type.STRING,
-                description: "one everyday analogy, 1-3 sentences, starting naturally (e.g. 'Imagine...')",
+                description: "one everyday analogy",
               },
               breakdown: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    part: { type: Type.STRING, description: "component or step name" },
-                    explanation: { type: Type.STRING, description: "one short sentence" },
+                    part: { type: Type.STRING },
+                    explanation: { type: Type.STRING },
                   },
                   required: ["part", "explanation"],
                 },
-                description: "2-5 items ONLY if the concept genuinely has distinct parts/steps/components. Otherwise empty array [].",
               },
               keyPoints: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "3-5 short, concrete, memorable points",
               },
               remember: {
                 type: Type.STRING,
-                description: "a very short memorable line or formula summing it up",
+                description: "short memorable line",
               },
               unclear: {
                 type: Type.BOOLEAN,
-                description: "only true if text is truly empty or pure gibberish with no discernible topic",
-              },
-              quiz: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    question: { type: Type.STRING, description: "A clear conceptual test question" },
-                    options: {
-                      type: Type.ARRAY,
-                      items: { type: Type.STRING },
-                      description: "Array of exactly 4 distinct answer options",
-                    },
-                    correctIndex: { type: Type.INTEGER, description: "Zero-based index of correct option (0, 1, 2, or 3)" },
-                    explanation: { type: Type.STRING, description: "Encouraging explanation of why this answer is correct" },
-                  },
-                  required: ["question", "options", "correctIndex", "explanation"],
-                },
-                description: "3 to 5 multiple-choice self-check questions",
               },
             },
-            required: ["topic", "simple", "example", "breakdown", "keyPoints", "remember", "unclear", "quiz"],
+            required: ["topic", "simple", "example", "breakdown", "keyPoints", "remember", "unclear"],
           },
         },
       });
