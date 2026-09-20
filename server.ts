@@ -70,74 +70,91 @@ async function startServer() {
 
       const ai = getGeminiClient();
 
-      const levelDescriptions = {
-        very_simple: "Explain Like I'm 5 (ELI5): Use the simplest possible language, zero academic jargon, relatable kindergarten/primary grade vocabulary, ultra-gentle tone.",
-        simple: "Standard High School / Undergrad Student Level: Clear, intuitive, conversational, eliminating dense academic convolution while maintaining core concepts.",
-        detailed: "Deep / Technical Breakdown: Thorough conceptual clarity with technical accuracy, breaking down nuances clearly without sacrificing depth."
-      };
+      const selectedLevel = (level as string) || "very_simple";
 
-      const selectedLevelDesc = levelDescriptions[level as keyof typeof levelDescriptions] || levelDescriptions.simple;
+      const prompt = `You are a patient, encouraging study tutor. A student pasted the following text or question from their studies. It can be about ANY subject — science, math, history, language, economics, literature, coding, or a single term with no context.
 
-      const systemInstruction = `You are a warm, encouraging, patient older sibling and master study mentor for stressed students.
-Your mission is to translate difficult, dense academic text or questions into crystal-clear, structured explanations.
-Tone guidelines:
-- Warm, empathetic, and encouraging ("You've got this!", "Let's make sense of this together").
-- Never condescending, never robotic, never textbook-dry.
-- Use vivid, sensory real-life analogies that make abstract things immediately intuitive.
-- Strictly adhere to the requested JSON structure. Every section must be rich, thoughtful, and immediately helpful for learning.`;
+Never say you cannot understand, simplify, or translate it. If the text is short or ambiguous (e.g. just one term), explain the most common academic meaning of that term and briefly note your assumption. Only if the text is truly empty or pure gibberish with no discernible topic should you set "unclear" to true — this should almost never happen.
 
-      const prompt = `Explanation Level Target: ${selectedLevelDesc}
-
-Original Academic Text / Concept to Explain:
+Student's text:
 """
 ${text.trim()}
 """
 
-Please translate this into the structured format:
-1. "simple": Super Simple — 1 to 2 plain, jargon-free sentences capturing the whole idea.
-2. "example": Real-life example — an everyday "Imagine..." scenario or analogy that a student can immediately visualize in their living room, kitchen, sports, or everyday life.
-3. "breakdown": 2 to 4 components showing: Concept → Parts → How they connect (each part has a name and a description of what it does).
-4. "keyPoints": 3 to 5 clear, essential bullet takeaways.
-5. "mnemonic": A catchy mnemonic rhyme, acronym, memory trick, or punchy formula to lock it into memory.
-6. "quiz": 3 to 5 multiple-choice questions (each has a question, exactly 4 plausible options, correctIndex 0-3, and a friendly explanation of why the right answer is correct).`;
+Explanation level: ${selectedLevel}
+- very_simple: Explain like the student is 5. Extremely simple words, short sentences, playful tone.
+- simple: Explain like a patient tutor talking to an average middle/high schooler. Plain language, no unexplained jargon.
+- detailed: A deeper explanation — the "why," not just the "what" — but still clear and well organized.
+
+Respond with ONLY a JSON object, no markdown fences, no extra commentary:
+{
+  "topic": "short name of the concept",
+  "simple": "2-5 sentence explanation in the requested style",
+  "example": "one everyday analogy, 1-3 sentences, starting naturally (e.g. 'Imagine...')",
+  "breakdown": [{"part": "component or step name", "explanation": "one short sentence"}],
+  "keyPoints": ["3-5 short, concrete, memorable points"],
+  "remember": "a very short memorable line or formula summing it up",
+  "unclear": false,
+  "quiz": [
+    {
+      "question": "clear conceptual question based on the content",
+      "options": ["option 1", "option 2", "option 3", "option 4"],
+      "correctIndex": 0,
+      "explanation": "friendly explanation of why this answer is correct"
+    }
+  ]
+}
+
+Rules:
+- "breakdown" gets 2-5 items ONLY if the concept genuinely has distinct parts/steps/components. Otherwise return [].
+- Ground everything in the actual text given — no generic filler.
+- Match the language of the student's text.
+- Auto-generate 3-5 multiple-choice quiz questions with exactly 4 options each, one correctIndex (0-3), and an encouraging explanation.`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3.8-flash",
         contents: prompt,
         config: {
-          systemInstruction,
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
             properties: {
+              topic: {
+                type: Type.STRING,
+                description: "short name of the concept",
+              },
               simple: {
                 type: Type.STRING,
-                description: "Super Simple — one or two plain sentences, no jargon",
+                description: "2-5 sentence explanation in the requested style",
               },
               example: {
                 type: Type.STRING,
-                description: "Real-life example — an 'Imagine...' style everyday analogy",
+                description: "one everyday analogy, 1-3 sentences, starting naturally (e.g. 'Imagine...')",
               },
               breakdown: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    part: { type: Type.STRING, description: "Name of the component or step" },
-                    description: { type: Type.STRING, description: "What it does and how it connects to the whole" },
+                    part: { type: Type.STRING, description: "component or step name" },
+                    explanation: { type: Type.STRING, description: "one short sentence" },
                   },
-                  required: ["part", "description"],
+                  required: ["part", "explanation"],
                 },
-                description: "Break it down: Concept -> Parts -> How they connect",
+                description: "2-5 items ONLY if the concept genuinely has distinct parts/steps/components. Otherwise empty array [].",
               },
               keyPoints: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "3 to 5 bullet points, auto-extracted",
+                description: "3-5 short, concrete, memorable points",
               },
-              mnemonic: {
+              remember: {
                 type: Type.STRING,
-                description: "Remember it — a short mnemonic, formula, or one-line summary",
+                description: "a very short memorable line or formula summing it up",
+              },
+              unclear: {
+                type: Type.BOOLEAN,
+                description: "only true if text is truly empty or pure gibberish with no discernible topic",
               },
               quiz: {
                 type: Type.ARRAY,
@@ -158,7 +175,7 @@ Please translate this into the structured format:
                 description: "3 to 5 multiple-choice self-check questions",
               },
             },
-            required: ["simple", "example", "breakdown", "keyPoints", "mnemonic", "quiz"],
+            required: ["topic", "simple", "example", "breakdown", "keyPoints", "remember", "unclear", "quiz"],
           },
         },
       });
@@ -168,11 +185,20 @@ Please translate this into the structured format:
 
       // Sanitize fields to guarantee predictable UI rendering
       const sanitized = {
+        topic: parsedData.topic || "Study Concept",
         simple: parsedData.simple || "Here is the simple explanation.",
         example: parsedData.example || "",
-        breakdown: Array.isArray(parsedData.breakdown) ? parsedData.breakdown : [],
+        breakdown: Array.isArray(parsedData.breakdown)
+          ? parsedData.breakdown.map((b: any) => ({
+              part: b.part || "Component",
+              explanation: b.explanation || b.description || "",
+              description: b.explanation || b.description || "",
+            }))
+          : [],
         keyPoints: Array.isArray(parsedData.keyPoints) ? parsedData.keyPoints : [],
-        mnemonic: parsedData.mnemonic || "",
+        remember: parsedData.remember || parsedData.mnemonic || "",
+        mnemonic: parsedData.remember || parsedData.mnemonic || "",
+        unclear: Boolean(parsedData.unclear),
         quiz: Array.isArray(parsedData.quiz)
           ? parsedData.quiz.map((q: any) => ({
               question: q.question || "Conceptual check",

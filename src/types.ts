@@ -2,7 +2,8 @@ export type ExplanationLevel = 'very_simple' | 'simple' | 'detailed';
 
 export interface BreakdownPart {
   part: string;
-  description: string;
+  explanation?: string;
+  description?: string;
 }
 
 export interface QuizQuestion {
@@ -17,11 +18,14 @@ export interface StudyExplanation {
   timestamp: number;
   originalText: string;
   level: ExplanationLevel;
+  topic?: string;
   simple: string;
   example: string;
   breakdown: BreakdownPart[];
   keyPoints: string[];
-  mnemonic: string;
+  mnemonic?: string;
+  remember?: string;
+  unclear?: boolean;
   quiz: QuizQuestion[];
 }
 
@@ -37,3 +41,4 @@ export interface PointClarificationState {
   data?: SimplifiedPointResponse;
   expanded: boolean;
 }
+

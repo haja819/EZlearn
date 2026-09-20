@@ -66,7 +66,8 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
 
     try {
       window.speechSynthesis.cancel(); // Stop any pending utterances
-      const textToRead = `${explanation.simple || ''}. Imagine this: ${explanation.example || ''}. Key points: ${(explanation.keyPoints || []).join('. ')}. To remember it: ${explanation.mnemonic || ''}`;
+      const memoryHook = explanation.remember || explanation.mnemonic || '';
+      const textToRead = `${explanation.simple || ''}. Imagine this: ${explanation.example || ''}. Key points: ${(explanation.keyPoints || []).join('. ')}. To remember it: ${memoryHook}`;
       const utterance = new SpeechSynthesisUtterance(textToRead);
       utterance.rate = 0.95; // Slightly calmer speaking rate for learning
       utterance.pitch = 1.0;
@@ -151,7 +152,12 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
     <div id="explanation-container" className="space-y-6">
       {/* Top Banner with speech readout and level indicator */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {explanation.topic && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shadow-2xs">
+              <span>📌 {explanation.topic}</span>
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/90 text-amber-900 border border-amber-300/60">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
             <span>
@@ -191,6 +197,18 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
           </button>
         </div>
       </div>
+
+      {explanation.unclear && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm rounded-xl flex items-start gap-2.5">
+          <span className="text-base">💡</span>
+          <div>
+            <strong className="font-semibold block">Ambiguous or Brief Query</strong>
+            <span>
+              This input was very short or general. Your tutor explained the most common academic meaning above. If you had a specific sub-topic in mind, try pasting the full textbook question or sentence!
+            </span>
+          </div>
+        </div>
+      )}
 
       {speechNotice && (
         <div className="p-3 bg-amber-100/80 border border-amber-300 text-amber-950 text-xs rounded-xl flex items-center justify-between">
@@ -286,50 +304,52 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
         </div>
       </section>
 
-      {/* SECTION 3: 🧩 Break It Down */}
-      <section
-        id="section-breakdown"
-        className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50/60 via-sky-50/20 to-white p-5 sm:p-6 shadow-xs relative"
-      >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-lg shadow-2xs">
-              🧩
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-sky-950 font-display">
-                Break It Down
-              </h3>
-              <p className="text-xs text-sky-800/80 font-medium">
-                Concept → Parts → How they connect
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {explanation.breakdown.map((item, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-xl border border-sky-100 p-4 shadow-2xs flex flex-col justify-between"
-            >
+      {/* SECTION 3: 🧩 Break It Down (shown when concept has distinct parts) */}
+      {explanation.breakdown && explanation.breakdown.length > 0 && (
+        <section
+          id="section-breakdown"
+          className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50/60 via-sky-50/20 to-white p-5 sm:p-6 shadow-xs relative"
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-lg shadow-2xs">
+                🧩
+              </div>
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-bold text-xs flex items-center justify-center">
-                    {idx + 1}
-                  </span>
-                  <h4 className="font-bold text-slate-900 text-sm font-display">
-                    {item.part}
-                  </h4>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {item.description}
+                <h3 className="text-base sm:text-lg font-bold text-sky-950 font-display">
+                  Break It Down
+                </h3>
+                <p className="text-xs text-sky-800/80 font-medium">
+                  Concept → Parts → How they connect
                 </p>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {explanation.breakdown.map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-xl border border-sky-100 p-4 shadow-2xs flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-bold text-xs flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <h4 className="font-bold text-slate-900 text-sm font-display">
+                      {item.part}
+                    </h4>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    {item.explanation || item.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* SECTION 4: 🎯 Key Points + Point-Specific Re-explanation */}
       <section
@@ -432,49 +452,51 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
       </section>
 
       {/* SECTION 5: 🧠 Remember It */}
-      <section
-        id="section-mnemonic"
-        className="rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 via-rose-50/20 to-white p-5 sm:p-6 shadow-xs relative overflow-hidden"
-      >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-lg shadow-2xs">
-              🧠
+      {(explanation.remember || explanation.mnemonic) && (
+        <section
+          id="section-mnemonic"
+          className="rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 via-rose-50/20 to-white p-5 sm:p-6 shadow-xs relative overflow-hidden"
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-lg shadow-2xs">
+                🧠
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-rose-950 font-display">
+                  Remember It
+                </h3>
+                <p className="text-xs text-rose-800/80 font-medium">
+                  Short memorable line, formula, or snappy memory hook
+                </p>
+              </div>
             </div>
+
+            <button
+              id="btn-copy-mnemonic"
+              type="button"
+              onClick={() => handleCopyText(explanation.remember || explanation.mnemonic || '', 'mnemonic')}
+              className="p-1.5 text-rose-800/60 hover:text-rose-900 rounded-lg hover:bg-rose-100/60 transition-colors"
+              title="Copy memory hook"
+            >
+              {copiedSection === 'mnemonic' ? (
+                <Check className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          <div className="bg-white/90 border border-rose-200/70 rounded-xl p-4 text-rose-950 font-medium text-sm sm:text-base leading-relaxed flex items-center gap-3">
+            <div className="w-2 h-10 bg-rose-400 rounded-full shrink-0" />
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-rose-950 font-display">
-                Remember It
-              </h3>
-              <p className="text-xs text-rose-800/80 font-medium">
-                Short mnemonic, formula, or snappy memory hook
-              </p>
+              <span className="font-display font-bold text-slate-900 text-base sm:text-lg block">
+                {explanation.remember || explanation.mnemonic}
+              </span>
             </div>
           </div>
-
-          <button
-            id="btn-copy-mnemonic"
-            type="button"
-            onClick={() => handleCopyText(explanation.mnemonic, 'mnemonic')}
-            className="p-1.5 text-rose-800/60 hover:text-rose-900 rounded-lg hover:bg-rose-100/60 transition-colors"
-            title="Copy mnemonic"
-          >
-            {copiedSection === 'mnemonic' ? (
-              <Check className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-
-        <div className="bg-white/90 border border-rose-200/70 rounded-xl p-4 text-rose-950 font-medium text-sm sm:text-base leading-relaxed flex items-center gap-3">
-          <div className="w-2 h-10 bg-rose-400 rounded-full shrink-0" />
-          <div>
-            <span className="font-display font-bold text-slate-900 text-base sm:text-lg block">
-              {explanation.mnemonic}
-            </span>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 };

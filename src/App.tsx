@@ -86,11 +86,14 @@ export default function App() {
         timestamp: Date.now(),
         originalText: textToExplain,
         level: levelToUse,
+        topic: explanationData.topic || '',
         simple: explanationData.simple || 'Concept explained simply.',
         example: explanationData.example || '',
         breakdown: Array.isArray(explanationData.breakdown) ? explanationData.breakdown : [],
         keyPoints: Array.isArray(explanationData.keyPoints) ? explanationData.keyPoints : [],
-        mnemonic: explanationData.mnemonic || '',
+        mnemonic: explanationData.mnemonic || explanationData.remember || '',
+        remember: explanationData.remember || explanationData.mnemonic || '',
+        unclear: Boolean(explanationData.unclear),
         quiz: Array.isArray(explanationData.quiz) ? explanationData.quiz : [],
       };
 
