@@ -12,6 +12,12 @@ export const QuizCard: React.FC<QuizCardProps> = ({ quiz }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [hasTriggeredConfetti, setHasTriggeredConfetti] = useState(false);
 
+  // Automatically reset quiz state when a new quiz is loaded
+  React.useEffect(() => {
+    setSelectedAnswers({});
+    setHasTriggeredConfetti(false);
+  }, [quiz]);
+
   const answeredCount = Object.keys(selectedAnswers).length;
   const totalCount = quiz.length;
   const isCompleted = answeredCount === totalCount && totalCount > 0;

@@ -33,6 +33,21 @@ export const ExplanationView: React.FC<ExplanationViewProps> = ({
   const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const [pointStates, setPointStates] = useState<Record<number, PointClarificationState>>({});
 
+  // Reset state when a new explanation is displayed
+  React.useEffect(() => {
+    setPointStates({});
+    setCopiedSection(null);
+    setSpeechNotice(null);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        // ignore
+      }
+    }
+    setIsSpeaking(false);
+  }, [explanation.id]);
+
   // Cleanup speech synthesis on unmount
   React.useEffect(() => {
     return () => {

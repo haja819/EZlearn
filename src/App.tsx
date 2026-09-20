@@ -29,11 +29,23 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setHistory(parsed);
-          // Set latest explanation as current active
-          setCurrentExplanation(parsed[0]);
-          setText(parsed[0].originalText);
-          setLevel(parsed[0].level);
+          const sanitizedHistory: StudyExplanation[] = parsed
+            .filter((item: any) => item && typeof item === 'object' && item.originalText)
+            .map((item: any) => ({
+              ...item,
+              breakdown: Array.isArray(item.breakdown) ? item.breakdown : [],
+              keyPoints: Array.isArray(item.keyPoints) ? item.keyPoints : [],
+              quiz: Array.isArray(item.quiz) ? item.quiz : [],
+              remember: item.remember || item.mnemonic || '',
+              mnemonic: item.remember || item.mnemonic || '',
+            }));
+          if (sanitizedHistory.length > 0) {
+            setHistory(sanitizedHistory);
+            // Set latest explanation as current active
+            setCurrentExplanation(sanitizedHistory[0]);
+            setText(sanitizedHistory[0].originalText);
+            setLevel(sanitizedHistory[0].level || 'very_simple');
+          }
         }
       }
     } catch (e) {
@@ -227,6 +239,7 @@ export default function App() {
             <div className="space-y-8 animate-fade-in">
               {/* Main 5-Part Structured Explanation */}
               <ExplanationView
+                key={`explanation-${currentExplanation.id}`}
                 explanation={currentExplanation}
                 onSelectLevelAgain={(newLevel) => {
                   setLevel(newLevel);
@@ -235,7 +248,10 @@ export default function App() {
               />
 
               {/* Auto-Generated Multiple Choice Knowledge Quiz */}
-              <QuizCard quiz={currentExplanation.quiz} />
+              <QuizCard
+                key={`quiz-${currentExplanation.id}`}
+                quiz={currentExplanation.quiz}
+              />
             </div>
           )}
 
